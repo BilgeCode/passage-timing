@@ -1,0 +1,243 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/google-apis/google-apis.html">
+<link rel="import" href="../bower_components/core-media-query/core-media-query.html">
+
+<link rel="import" href="../elements/pt-waypoint-map.html">
+<link rel="import" href="../elements/pt-passage-properties.html">
+<link rel="import" href="../elements/pt-passage-timing.html">
+<link rel="import" href="../elements/pt-waypoint-list.html">
+<link rel="import" href="../elements/pt-toolbar.html">
+
+<polymer-element
+  name="pt-planner"
+  attributes="passageEndpoint tideEndpoint mode authOptions">
+
+  <!-- included timezone-js here because it's used by multiple elements -->
+  <script src="../bower_components/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="../bower_components/timezone-js/src/date.js"></script>
+
+  <template>
+    <style>
+      :host {
+        display: block;
+        height: 100vh;
+      }
+
+      #subtitle {
+        font-size: .6em;
+        font-style: italic;
+        wrap: nowrap;
+        font-weight: 200;
+      }
+
+      #left {
+        background-color: #eee;
+        /*width: 40%;*/
+      }
+
+      #right {
+        background-color: #0ff;
+      }
+
+      #timing {
+        padding: 15px;
+        text-align: center;
+        background-color: white;
+      }
+
+      #timing pt-passage-timing {
+        margin: auto;
+      }
+
+      pt-passage-properties {
+        background: #2F3439;
+        color: white;
+      }
+
+      #waypointlist {
+        overflow: auto;
+      }
+
+      #disclaimer, #noWaypoints {
+        background-color: #fe6557;
+        /*margin: 10px -15px 40px -15px;*/
+        margin: 40px 0px;
+        padding: 20px 40px;
+        font-size: 1.1em;
+      }
+
+      #noWaypoints {
+        background-color: #FFF9C4;
+        color: #FFAB40;
+        /*color: white;
+        background-color: #FFAB40;*/
+        margin-bottom: 10px;
+      }
+
+      :host::shadow /deep/ .centerline {
+        stroke: #fe6557;
+        opacity: .8;
+      }
+    </style>
+
+    <google-maps-api
+      apiKey="{{apiKey}}"
+      libraries="geometry"
+      on-api-load="{{mapApiLoaded}}"
+      id="googleMapsApi"></google-maps-api>
+
+    <core-media-query
+      query="max-width: {{responsiveWidth}}"
+      queryMatches="{{smallThreshold}}"></core-media-query>
+
+    <div vertical layout style="height: 100vh;">
+      <pt-toolbar
+        authOptions="{{authOptions}}"
+        showGraphs="{{showGraphs}}"
+        showMap="{{showMap}}"
+        smallThreshold="{{smallThreshold}}"></pt-toolbar>
+      <div horizontal layout flex>
+        <template if="{{showGraphs && apisLoaded}}">
+          <div id="left" layout vertical style="width: {{leftWidth}};">
+            <div id="timing">
+              <paper-shadow z="1"></paper-shadow>
+              <pt-passage-timing
+                id="passageTiming"
+                passage="{{passage}}"
+                debug="true"
+                width="{{graphWidth + 100}}">
+              </pt-passage-timing>
+            </div>
+            <div flex id="waypointlist">
+
+              <template if="{{passage.waypoints.length == 0}}">
+                <div id="noWaypoints">
+                  <strong>Welcome!</strong><br><br/>
+                  You haven't created any waypoints yet. Create one by right-clicking somewhere on the map.
+                </div>
+              </template>
+
+              <pt-waypoint-list
+                passage="{{passage}}"
+                width="{{graphWidth}}"
+                tideEndpoint="{{tideEndpoint}}"
+                apiKey="{{apiKey}}"></pt-waypoint-list>
+              <div id="disclaimer">
+                <strong>Please note:</strong> <em>PassageTiming</em> is only a
+                planning tool, not a navigational aid and cannot substitute for
+                diligent planning using up-to-date charts, weather radio, and
+                the latest local predictions.<br/>
+                <strong class='pull-right'>Becareful out there!</strong><br/>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template if="{{showMap && apisLoaded}}">
+          <div layout vertical flex id="right">
+            <pt-passage-properties
+              loginLink="{{authOptions.loginLink}}"
+              mode="{{mode}}"
+              passage="{{passage}}"
+              passageEndpoint="{{passageEndpoint}}"></pt-passage-properties>
+            <div flex layout vertical>
+              <pt-waypoint-map flex
+                apiKey="{{apiKey}}"
+                passage="{{passage}}"></pt-waypoint-map>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+
+      leftWidth: "40%",
+      graphWidth: 400,
+      showMap: true,
+      showGraphs: true,
+      responsiveWidth: "768px",
+      smallThreshold: false,
+
+      /*
+       * Trying to draw all these apis
+       */
+      apisLoaded: false,
+
+      authOptionsChanged: function() {
+        console.log("chagerooni");
+      },
+
+      created: function() {
+        timezoneJS.timezone.zoneFileBasePath = this.resolvePath('../tz');
+
+        timezoneJS.timezone.defaultZoneFile = ['northamerica'];
+        // timezoneJS.timezone.loadingScheme = timezoneJS.timezone.loadingSchemes.PRELOAD_ALL;
+        // timezoneJS.timezone.init();
+        timezoneJS.timezone.init({async: false});
+
+        this.apiKey = "AIzaSyB_7n4r1znCQo2DXkeDppi7ZD26ypl5y4E";
+        this.passage = null;
+
+        // this.passage = {
+        //   name: "test passage",
+        //   departureDate: "2014-08-20",
+        //   latitude: 41.35,
+        //   longitude: -71.3267,
+        //   zoom: 9,
+        //   mapType: "terrain",
+        //   waypoints: [],
+        //   timeZone: "America/New_York",
+        //   estimatedAvgSpeed: 4,
+        //   selectedWaypointIndex: null,
+        //   hoursOverall: 0,
+        //   totalDistance: 0,
+        // };
+
+        var self = this;
+        window.addEventListener("resize", function() {
+          self.updateGraphWidth();
+        });
+      },
+
+      ready: function() {
+        // var self = this;
+        // var mapsAPI = document.querySelector('google-maps-api');
+        // mapsAPI.addEventListener('api-load', function(e) {
+        //   self.mapApiLoaded();
+        // });
+
+        this.updateGraphWidth();
+      },
+
+      mapApiLoaded: function() {
+        this.apisLoaded = true;
+      },
+
+      printPassage: function() {
+        console.log(this.passage);
+      },
+
+      smallThresholdChanged: function() {
+        console.log("Query Changed: " + this.smallThreshold);
+        if(this.smallThreshold) {
+          this.showGraphs = false;
+          this.leftWidth =  "100%";
+        }
+        else {
+          this.showGraphs = this.showMap = true;
+          this.leftWidth =  "40%";
+        }
+      },
+
+      updateGraphWidth: function() {
+        if(this.smallThreshold) {
+          this.graphWidth = window.innerWidth - 100;
+        }
+        else {
+          this.graphWidth = window.innerWidth * .4 - 100;
+        }
+      },
+    });
+  </script>
+</polymer-element>

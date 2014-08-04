@@ -1,0 +1,22 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<polymer-element name="pt-stathat" attributes="">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+  </template>
+  <script>
+    Polymer({
+
+      waypointChanged: function() {
+        // record stat in stathat
+        console.log("incrementing stathat waypoint count");
+        _StatHat.push(["_trackCount", "Uuz8KUKMzFD3MCehPEBCyCAzRlZM", 1.0]);
+      }
+
+    });
+  </script>
+</polymer-element>

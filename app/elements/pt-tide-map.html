@@ -1,0 +1,74 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/google-map/google-map.html">
+
+<polymer-element
+  name="pt-tide-google-map"
+  extends="google-map">
+  <script>
+    Polymer('pt-tide-google-map', {
+
+      libraries: "geometry",
+
+      getMapOptions: function() {
+        var mapOptions = this.super();
+        mapOptions["streetViewControl"] = false;
+        mapOptions["panControl"] = false;
+        mapOptions["scrollwheel"] = false;
+        return mapOptions;
+      }
+
+    });
+  </script>
+</polymer-element>
+
+<polymer-element name="pt-tide-map" attributes="waypoint passage apiKey">
+  <template>
+    <style>
+      :host {
+        display: block;
+        text-align: center;
+      }
+
+      :host p {
+        margin-top: 0px;
+      }
+    </style>
+
+    <div flex layout vertical style="height: 300px;">
+
+      <p>
+        Pick a nearby tide station
+      </p>
+
+      <template if="{{waypoint.tideStationName}}">
+        <p><em>{{waypoint.tideStationName}}</em></p>
+      </template>
+
+      <pt-tide-google-map flex
+        apiKey="{{apiKey}}"
+        map="{{map}}"
+        latitude="{{waypoint.latLng[0]}}"
+        longitude="{{waypoint.latLng[1]}}"
+        fitToMarkers="true"
+        mapType="{{passage.mapType}}"></pt-tide-google-map>
+    </div>
+
+  </template>
+  <script>
+    Polymer({
+
+      publish: {
+        /**
+         * The pt-tide-google-map's map.
+         *
+         * @attribute map
+         * @type google map object
+         * @default null
+         */
+
+        map: {value: null, reflect: true}
+      }
+
+    });
+  </script>
+</polymer-element>

@@ -1,0 +1,144 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+
+<link rel="import" href="pt-tide-map.html">
+<link rel="import" href="pt-tide-stations.html">
+
+<polymer-element
+  name="pt-waypoint-properties"
+  attributes="passage waypoint tideEndpoint apiKey">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      paper-toggle-button.yellow::shadow paper-radio-button::shadow #onRadio {
+        background-color: #FFAB40;
+      }
+
+      paper-toggle-button.yellow::shadow #toggleBar[checked] {
+        background-color: #FFAB40;
+      }
+
+      paper-toggle-button.blue::shadow paper-radio-button::shadow #onRadio {
+        background-color: steelblue;
+      }
+
+      paper-toggle-button.blue::shadow #toggleBar[checked] {
+        background-color: steelblue;
+      }
+
+      paper-toggle-button.green::shadow paper-radio-button::shadow #onRadio {
+        background-color: #5CB85C;
+      }
+
+      paper-toggle-button.green::shadow #toggleBar[checked] {
+        background-color: #5CB85C;
+      }
+
+      :host pt-tide-map {
+        height: 300px;
+      }
+
+      :host .formRow {
+        margin-bottom: 1em;
+      }
+
+      :host .subRow {
+        border-width: 1px 0px;
+        border-color: #ddd;
+        border-style: solid;
+        background-color: #fafafa;
+        padding: 10px;
+        text-align: left;
+      }
+
+    </style>
+
+    <paper-input
+      floatingLabel
+      label="Waypoint Name"
+      inputValue="{{waypoint.name}}"></paper-input>
+    <div center horizontal layout class="formRow">
+      <div flex>Show Sunrise/Sunset</div>
+      <paper-toggle-button
+        checked="{{waypoint.showSun}}"
+        class="yellow"></paper-toggle-button>
+    </div>
+    <div center horizontal layout class="formRow">
+      <div flex>Override Average Speed</div>
+      <paper-toggle-button
+        checked="{{waypoint.hasCustomSpeed}}"
+        class="green"></paper-toggle-button>
+    </div>
+    <template if="{{waypoint.hasCustomSpeed}}">
+      <div center class="formRow subRow">
+        <label>
+          Estimated speed to the next waypoint.<br/>
+        </label><br/>
+        <paper-slider
+          min=".5" max="15"
+          value="{{waypoint.estimatedSpeedToNext}}"
+          step=".05"
+          editable></paper-slider>
+      </div>
+    </template>
+
+    <div center horizontal layout class="formRow">
+      <div flex>Show Tide Predictions</div>
+      <paper-toggle-button
+        checked="{{waypoint.showTide}}"
+        class="blue"></paper-toggle-button>
+    </div>
+    <template if="{{waypoint.showTide}}">
+      <div class="formRow subRow">
+        <div horizontal layout>
+          <pt-tide-map flex
+            map="{{map}}"
+            waypoint="{{waypoint}}"
+            passage="{{passage}}"
+            apiKey="{{apiKey}}"></pt-tide-map>
+        </div>
+        <pt-tide-stations
+          map="{{map}}"
+          waypoint="{{waypoint}}"
+          tideEndpoint="{{tideEndpoint}}"><pt-tide-stations>
+      </div>
+    </template>
+
+  </template>
+  <script>
+    Polymer({
+
+      map: null,
+
+      observe: {
+        "waypoint.hasCustomSpeed": "speedChanged",
+        "waypoint.estimatedSpeedToNext": "updateTiming"
+      },
+
+      /**
+       * If estimated speed to next is null default to current estimated avg
+       */
+      speedChanged: function(oldValue, newValue) {
+        if(oldValue == null) {
+          this.waypoint.estimatedSpeedToNext = this.passage.estimatedAvgSpeed;
+        }
+        this.updateTiming();
+      },
+
+      updateTiming: function() {
+        // A quick and dirty way to notify passageTiming
+        console.log("CHANGED EST SPEED!!!");
+        if(this.passage.timingEndpoint == undefined || this.passage.timingEndpoint == null) {
+          this.passage.timingEndpoint = 0;
+        }
+        this.passage.timingEndpoint++;
+        // return this.updateTimingCallback();
+      }
+    });
+  </script>
+</polymer-element>

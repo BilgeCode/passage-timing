@@ -1,0 +1,99 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../bower_components/bc-d3-areachart/bc-d3-areachart.html">
+
+<polymer-element
+  name="pt-tide-chart"
+  attributes="tideEndpoint passage waypoint width height">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      :host bc-d3-areachart::shadow .chartContainer {
+        border-width: 0px;
+        background-color: lightsteelblue;
+      }
+
+      :host bc-d3-areachart::shadow .chartContainer .centerLine {
+        fill: red;
+      }
+    </style>
+
+    <bc-d3-areachart
+      width="{{width}}"
+      height="{{height}}"
+      data="{{data}}"
+      domain="{{waypoint.displayDomain}}"
+      debug="{{debug}}"
+      showPoints="true"
+      centerline="{{centerline}}"></bc-d3-areachart>
+  </template>
+  <script>
+    Polymer({
+
+      tideEndpoint: null,
+      centerline: true,
+
+      observe: {
+        'waypoint.latLng': 'updateData',
+        'waypoint.dataDomain': 'updateData',
+        'waypoint.tideStationId': 'updateData'
+      },
+
+      getStationUrl: function() {
+        var start = new timezoneJS.Date(this.waypoint.dataDomain[0], this.passage.timeZone)
+        var end = new timezoneJS.Date(this.waypoint.dataDomain[1], this.passage.timeZone)
+
+        // var url = this.tideEndpoint
+        // @todo: get the tide station url from the API
+        var url = this.waypoint.tideStationURL + "levels/";
+        // var url = this.waypoint.tideStationLevelsURL;
+        url += "?start=" + start.getUTCFullYear() + "-" + (start.getUTCMonth() + 1) + "-" + start.getUTCDate();
+        url += "&end=" + end.getUTCFullYear() + "-" + (end.getUTCMonth() + 1) + "-" + end.getUTCDate();
+        return url;
+      },
+
+      updateData: function() {
+        /*
+          fetch tide data
+        */
+        if(
+            this.waypoint.tideStationId != undefined &&
+            this.waypoint.tideStationId != null &&
+            this.tideEndpoint != null) {
+
+          $.ajax({
+            url: this.getStationUrl(),
+            success: this.processTideLevelData(),
+            dataType: 'json'
+          });
+
+        }
+
+      },
+
+      processTideLevelData: function() {
+        /*
+          returns a method that processes the data returned from the api
+        */
+        var self = this;
+        return function(data) {
+          var tempData = [];
+          for(var i=0;i<data.levels.length;i++) {
+
+            var d = new Date(data.levels[i].time); // parse the date
+            d = new timezoneJS.Date(d, self.passage.timeZone); // convert it to local time.
+
+            tempData.push({
+              xVal: d,
+              yVal: data.levels[i].level
+            })
+          }
+          self.data = tempData;
+        }
+      }
+    });
+  </script>
+</polymer-element>

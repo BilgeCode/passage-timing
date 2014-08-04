@@ -1,0 +1,299 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<polymer-element name="pt-tide-stations" attributes="waypoint map tideEndpoint">
+  <template>
+    <style>
+      :host {
+        display: block;
+        text-align: right;
+        margin-top: 10px;
+      }
+    </style>
+
+    Showing stations within
+    <select value="{{waypoint.stationRadius}}" selectedIndex="{{waypoint.stationRadiusSelectIndex}}">
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="15">15</option>
+      <option value="20">20</option>
+      <option value="25">25</option>
+    </select>
+    miles
+  </template>
+  <script>
+    Polymer({
+
+      /*
+        Displays nearby tide stations for a waypoint on a google
+        map and allows the user to select one
+      */
+
+      stationMarkers: [],
+      waypointMarker: null,
+      path: null,
+
+      /*
+       * The `stationPolyLine` is the line from the waypoint to the selected tide
+       * station
+       */
+      stationPolyLine: null,
+
+      /*
+       * the `selectPolyLine` temporary line from a station to the waypoint
+       */
+      selectPolyLine: null,
+
+      /*
+       * An indicator that no nearby stations were found
+       */
+      emptyStationList: false,
+
+      observe: {
+          // 'endpoint': 'validateWaypointsChanged',
+          // 'passage.selectedWaypointIndex': 'selectedChanged'
+          'waypoint.stationRadius': 'getStationMarkers',
+          'waypoint.latLng': 'waypointChanged',
+          'map': 'waypointChanged'
+        },
+
+      created: function() {
+        this.center = new google.maps.LatLng([41.35, -71.3267]);
+        this.bounds = new google.maps.LatLngBounds(this.center);
+      },
+
+      ready: function() {
+        this.initLines();
+      },
+
+      resetMap: function() {
+        /*
+          Since this is in a collapsing div, the gmap isn't aware of it's position
+        */
+        google.maps.event.trigger(this.map, 'resize');
+        this.map.setCenter(this.center);
+        this.getStationMarkers();
+      },
+
+      initLines: function() {
+
+      	var stationPolyLineOptions = {
+      		strokeColor: "#FF0000",
+      		strokeOpacity: 0.3,
+      		strokeWeight: 3,
+      	};
+      	var selectSymbol = {
+      		path: 'M 0,-1 0,1',
+      		strokeOpacity: 1,
+      		scale: 4
+      	};
+      	var selectPolyLineOptions = {
+      		strokeColor: "#666666",
+      		strokeOpacity: 0.3,
+      		strokeWeight: 3,
+      		icons: [{
+      		    icon: selectSymbol,
+      		    offset: '0',
+      		    repeat: '20px'
+      		  }],
+      	};
+      	this.stationPolyLine = new google.maps.Polyline(stationPolyLineOptions);
+      	this.selectPolyLine = new google.maps.Polyline(selectPolyLineOptions);
+      },
+
+      waypointChanged: function() {
+        /*
+          When the waypoint is changed:
+            - re-center the map
+            - delete the markers
+            - get new markers
+        */
+        if(this.map) {
+          this.center = this.waypoint.latLng;
+          this.center = new google.maps.LatLng(this.center[0], this.center[1]);
+          this.map.setCenter(this.center);
+          this.bounds = new google.maps.LatLngBounds(this.center);
+
+          if(this.waypointMarker == null) {
+        		this.waypointMarker = new google.maps.Marker({
+        			map: this.map,
+        			position: this.center,
+        			draggable: false
+        		});
+          }
+          this.waypointMarker.setPosition(this.center);
+
+          // if their is a station path, then update that line
+          var p = this.stationPolyLine.getPath().getArray();
+          if(p.length == 2) {
+            p[0] = this.center;
+            this.stationPolyLine.setPath(p);
+          }
+
+          this.resetMap();
+        }
+      },
+
+      getWaypointLatLng: function() {
+        /*
+          returns a google latLng object, since I don't want to store it
+          on the object
+        */
+        return new google.maps.LatLng(this.waypoint.latLng[0], this.waypoint.latLng[1]);
+      },
+
+      getStationListUrl: function() {
+        var url = this.tideEndpoint;
+        url += "?lat=" + this.waypoint.latLng[0];
+        url += "&lng=" + this.waypoint.latLng[1];
+        url += "&proximity=" + this.waypoint.stationRadius;
+        return url;
+      },
+
+      getStationDetailUrl: function(stationId) {
+        return this.tideEndpoint + stationId + "/";
+
+        /*
+          To test this, I'll have to use injection
+
+          return "/test/json/tide_station_detail_test.json";
+        */
+      },
+
+      getStationMarkers: function() {
+
+        if(this.map == null || this.map == undefined) {
+          // don't do anything until we have a map
+          return;
+        }
+
+        console.log("GETTING STATIONS");
+
+        if(this.waypoint.stationRadius == null || this.waypoint.stationRadius == undefined) {
+          this.waypoint.stationRadius = 5;
+        }
+
+        $.ajax({
+          url: this.getStationListUrl(),
+          success: this.drawStationMarkers(),
+          dataType: 'json'
+        });
+      },
+
+      drawMarkerForStation: function(s) {
+
+        var pos = new google.maps.LatLng(s.latitude, s.longitude);
+        this.bounds.extend(pos);
+
+        var m = new google.maps.Marker({
+    			map: this.map,
+    			position: pos,
+    			draggable: false,
+          icon: "http://labs.google.com/ridefinder/images/mm_20_blue.png"
+    		});
+        m.stationId = s.id;
+        m.stationURL = s.url;
+        m.stationName = s.name;
+        this.stationMarkers.push(m);
+        this.attachListeners(m);
+
+        // if this station is the selected one, then draw the line
+        if(this.waypoint.tideStationId != null && this.waypoint.tideStationId != undefined) {
+          if(s.id == this.waypoint.tideStationId) {
+            var newPath = [this.getWaypointLatLng(), m.getPosition()];
+            this.stationPolyLine.setPath(newPath);
+            this.stationPolyLine.setMap(this.map);
+          }
+        }
+        this.map.fitBounds(this.bounds);
+      },
+
+      clearMap: function() {
+        /*
+          remove any station markers and reset the bounds
+        */
+        // reset the bounds
+        this.bounds = new google.maps.LatLngBounds(this.center);
+
+        // remove any existing markers first
+        for (var i = 0; i < this.stationMarkers.length; i++) {
+          this.stationMarkers[i].setMap(null);
+        }
+        this.stationMarkers = [];
+      },
+
+      drawStationMarkers: function() {
+        /*
+          returns a function that
+          takes the json response and draws the markers
+        */
+
+        var self = this;
+        return function(data) {
+
+          self.clearMap();
+
+          // flag to indicate that the currently selected station was in the list
+          var selectedInList = false;
+
+          if(data.length == 0) {
+            self.emptyStationList = true;
+          }
+          else {
+            self.emptyStationList = false;
+
+            for(var j=0; j<data.length;j++) {
+              var s = data[j];
+              self.drawMarkerForStation(s);
+
+              // and toggle the selectedInList flag
+              if(s.id == self.waypoint.tideStationId) {
+                selectedInList = true;
+              }
+            }
+          }
+
+          // if there is a selected tide station and it was not in the list,
+          // we'll have to get it seperately
+          if(!selectedInList && self.waypoint.tideStationId != null && self.waypoint.tideStationId != undefined) {
+            $.ajax({
+              url: self.getStationDetailUrl(self.waypoint.tideStationId),
+              success: function(data) {
+                self.drawMarkerForStation(data);
+              },
+              dataType: 'json'
+            });
+          }
+        }
+      },
+
+      attachListeners: function(stationMarker) {
+        /*
+          Attaches listeners to the tide station markers
+        */
+        // var newPath = [this.getWaypointLatLng(), stationMarker.getPosition()];
+        var pos = stationMarker.getPosition();
+        var self = this;
+
+        // add listeners to the station markers
+        google.maps.event.addListener(stationMarker, 'mouseover', function() {
+          self.selectPolyLine.setPath([self.getWaypointLatLng(), pos]);
+          self.selectPolyLine.setMap(self.map);
+        });
+        // Hide the temporary line
+        google.maps.event.addListener(stationMarker, 'mouseout', function() {
+          self.selectPolyLine.setMap(null);
+        });
+        // clicking selects this marker
+        google.maps.event.addListener(stationMarker, 'click', function() {
+          self.waypoint.tideStationId = stationMarker.stationId;
+          self.waypoint.tideStationURL = stationMarker.stationURL;
+          self.waypoint.tideStationName = stationMarker.stationName;
+          self.stationPolyLine.setPath([self.getWaypointLatLng(), pos]);
+          self.stationPolyLine.setMap(self.map);
+          self.selectPolyLine.setMap(null);
+          self.waypoint.showTide = true;
+        });
+      }
+    });
+  </script>
+</polymer-element>

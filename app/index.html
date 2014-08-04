@@ -1,0 +1,43 @@
+<!doctype html>
+<html class="no-js">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Passage Timing</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+
+        <!-- build:css styles/main.css -->
+        <link rel="stylesheet" href="styles/main.css">
+        <link href='http://fonts.googleapis.com/css?family=Roboto+Condensed:400italic,700,300,400' rel='stylesheet' type='text/css'>
+        <!-- endbuild-->
+
+        <!-- Place your HTML imports here -->
+        <script src="bower_components/platform/platform.js"></script>
+        <link rel="import" href="elements/pt-planner.html">
+    </head>
+    <body unresolved>
+
+      <pt-planner
+        id="planner"
+        mode="demo"
+        tideEndpoint="localhost:8000/api/tides/stations/"></pt-planner>
+
+    <script>
+      document.addEventListener('polymer-ready', function() {
+        var p = document.getElementById('planner');
+        p.authOptions = {
+          loginLink: "/users/login/",
+          logoutLink: "/users/logout",
+          homeLink: "/index.html",
+          username: "jamstooks",
+          helpMenuItems: [
+            ["Contact Me", "/contact/"],
+            ["Help", "/help/"]
+          ]
+        }
+      });
+    </script>
+    </body>
+</html>

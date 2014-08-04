@@ -1,0 +1,268 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/bc-d3-datebrush/bc-d3-datebrush.html">
+
+<polymer-element name="pt-passage-timing" attributes="passage debug width">
+  <script src="../bower_components/d3/d3.min.js"></script>
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      #departureTime {
+        font-size: .8em;
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+    <template if="{{passage != null}}">
+       <bc-d3-datebrush
+         height="30"
+         data="{{data}}"
+         domain="{{passage.domain}}"
+         extent="{{passage.extent}}"
+         width="{{width | scaleWidth}}"
+         debug="{{debug}}"></bc-d3-datebrush>
+        <!-- <p id='departureTime'>
+          Departure:
+          {{passage.departureTime | displayDateTime}}
+          {{passage.arrivalTime | displayDateTime}}
+        </p> -->
+      </template>
+    </template>
+  <script>
+    Polymer({
+
+      width: 400,
+
+      log: function(logTxt) {
+        // A quick console.log tool
+        if(this.debug) {
+          console.log("[" + this.tagName + "] " + logTxt);
+        }
+      },
+
+      scaleWidth: function(width) {
+        // Scales the width of the brush based on padding and margins
+        return width - 30;
+      },
+
+      observe: {
+          'passage.departureDate': 'departureChanged',
+          'passage.extent': 'extentChanged',
+          'passage.totalDistance': 'updateWaypointTiming',
+          'passage.estimatedAvgSpeed': 'updateWaypointTiming',
+          'passage.timingEndpoint': 'updateWaypointTiming',
+          'passage.waypoints.length': 'updateWaypointTiming',
+          'passage.timeZone': 'departureChanged'
+          // timingEndpoint is a quick/dirty way to have a listener for waypoint est speed
+        },
+
+      created: function() {
+        this.dateTimeFormat = d3.time.format("%H:%M %a %b %e");
+        this.format = d3.time.format("%Y-%m-%d");
+      },
+
+      displayDateTime: function(date) {
+        if(date != null && date != undefined) {
+          return this.dateTimeFormat(date);
+        }
+          return "";
+      },
+
+      /*
+        When the passage estimated start date changes, the domain changes
+
+          - departureDate
+          - domain: the domain for the departure window
+          - extent: the selected extent of the domain to display
+          - departureTime, the datetime at the center of the extent
+      */
+      departureChanged: function(oldValue, newValue) {
+        this.log("departure changed!! " + this.passage.departureDate);
+
+        // @todo: handle the difference between a change and an initialization
+        // change will automatically reset domain and extent
+        // initialization would require a check first
+
+        if(oldValue == null || oldValue == undefined) {
+          // on init, recalculate if the passage doesn't have domain and extent
+          // defined
+          if(this.passage.domain == null || this.passage.domain == undefined ||
+            this.passage.extent == null || this.passage.extent == undefined ||
+            this.passage.domain[0] == null || this.passage.extent[0] == null){
+              this.setDomainFromDate();
+          }
+          else {
+            this.passage.domain = [
+             new timezoneJS.Date(Date.parse(this.passage.domain[0]), this.passage.timeZone),
+             new timezoneJS.Date(Date.parse(this.passage.domain[1]), this.passage.timeZone)
+            ];
+            this.passage.extent = [
+             new timezoneJS.Date(Date.parse(this.passage.extent[0]), this.passage.timeZone),
+             new timezoneJS.Date(Date.parse(this.passage.extent[1]), this.passage.timeZone)
+            ];
+          }
+        }
+        else {
+          this.setDomainFromDate();
+        }
+      },
+
+      /*
+        Given the departure date, set the domain and extent appropriately
+      */
+      setDomainFromDate: function() {
+
+        // first we need to be sure that timezone-js has loaded
+        // if(timezoneJS.timezone.zoneFileBasePath == undefined) {
+          this.log("changing domain");
+
+          // the domain is 8 days wide.. one before the departure date
+          // and 7 after
+          var start = new timezoneJS.Date(
+            Date.parse(this.passage.departureDate),
+            this.passage.timeZone
+          );
+          start.setDate(start.getDate()-1);
+          start.setHours(0);
+          start.setMinutes(0);
+          start.setSeconds(0);
+
+          var end = new timezoneJS.Date(start, this.passage.timeZone);
+          end.setDate(end.getDate()+8);
+
+          this.passage.domain = [start, end];
+
+          this.log("new domain: " + this.passage.domain);
+
+          // the initial extent is 24 hrs, centered on the departure day's noon
+          var start = new timezoneJS.Date(this.passage.domain[0], this.passage.timeZone);
+          start.setDate(start.getDate() + 1);
+          var end = new timezoneJS.Date(start, this.passage.timeZone);
+          end.setDate(end.getDate() + 1);
+
+          this.passage.extent = [start, end];
+
+          this.log("new extent: " + this.passage.extent);
+        // }
+      },
+
+      /*
+        When the extent changes, so does the departure time
+      */
+      extentChanged: function() {
+        this.passage.departureTime = new timezoneJS.Date(
+          d3.median(this.passage.extent),
+          this.passage.timeZone
+        );
+        this.updateWaypointTiming();
+      },
+
+      /*
+        Given the distances between waypoints and the start time,
+        update all the offsets for waypoints and data and display domains
+      */
+      updateWaypointTiming: function() {
+
+        this.log("setting waypoint timings");
+
+        for(var i=0; i < this.passage.waypoints.length; i++) {
+          var w = this.passage.waypoints[i];
+          if(i == 0) {
+            w.hoursFromLast = 0;
+            w.hoursOverall = 0;
+            this.passage.hoursOverall = w.hoursOverall;
+            w.arrivalTime = new timezoneJS.Date(
+              this.passage.departureTime,
+              this.passage.timeZone
+            );
+            console.log(w.arrivalTime);
+          }
+          else {
+            var wLast = this.passage.waypoints[i-1];
+            var speed = this.passage.estimatedAvgSpeed;
+            if(wLast.hasCustomSpeed) {
+              speed = wLast.estimatedSpeedToNext
+            }
+            w.hoursFromLast = w.distanceFromLast / speed;
+            w.hoursOverall = w.hoursFromLast + wLast.hoursOverall;
+
+            this.log("distance: " + w.distanceFromLast);
+            this.log("speed: " + speed);
+            this.log("offset: " + w.hoursFromLast);
+            this.log("overall: " + w.hoursOverall);
+
+            this.passage.hoursOverall = w.hoursOverall;
+            wLast.hoursToNext = w.hoursFromLast;
+            wLast.nextHoursOverall = w.hoursOverall;
+
+            // nautical miles / knots = hours
+            w.arrivalTime = new timezoneJS.Date(
+              this.passage.departureTime,
+              this.passage.timeZone
+            );
+            w.arrivalTime.setSeconds(w.arrivalTime.getSeconds() + (w.hoursOverall * 60 * 60));
+          }
+        }
+        // must wait for all timing to complete, so we can use the overall window
+        for(var j=0;j<this.passage.waypoints.length;j++) {
+          this.setWaypointDisplayDomain(this.passage.waypoints[j]);
+          this.setWaypointDataDomain(this.passage.waypoints[j]);
+        }
+
+        this.log("done setting waypoint timings");
+      },
+
+      /*
+        displayDomain: the start and end dates to display in graphs
+
+        the display domain is the same length as passage.extent, but
+        centered on the arrival time
+      */
+      setWaypointDisplayDomain: function(w) {
+        var displayDelta = this.passage.extent[1] - this.passage.departureTime;
+        var displayDomain = [
+          new timezoneJS.Date(w.arrivalTime, this.passage.timeZone),
+          new timezoneJS.Date(w.arrivalTime, this.passage.timeZone)
+        ];
+        displayDomain[0].setMilliseconds(displayDomain[0].getMilliseconds() - displayDelta);
+        displayDomain[1].setMilliseconds(displayDomain[1].getMilliseconds() + displayDelta);
+        w.displayDomain = displayDomain;
+      },
+
+      /*
+        dataDomain: the start and end dates to collect data for
+
+        data domain is a 4-month window around the arrival time
+        if the domain is already set, only change it if the passage
+        duration leaves the window... this will help reduce API requests
+      */
+      setWaypointDataDomain: function(w) {
+
+        if(w.dataDomain != undefined && w.dataDomain != null) {
+          var innerDomain = [
+            new timezoneJS.Date(this.passage.domain[0]),
+            new timezoneJS.Date(this.passage.departureTime)
+          ];
+          innerDomain[1].setSeconds(innerDomain[1].getSeconds() + (this.passage.hoursOverall * 60 * 60));
+
+          if(
+            w.dataDomain[0] < innerDomain[0] &&
+            w.dataDomain[1] > innerDomain[1]
+          ) {
+            return;
+          }
+        }
+        // if it's not set, or the display domain is outside of the passage duration
+        var dataDomain = [
+          new timezoneJS.Date(w.arrivalTime, this.passage.timeZone),
+          new timezoneJS.Date(w.arrivalTime, this.passage.timeZone)
+        ];
+        dataDomain[0].setDate(dataDomain[0].getDate() - 60);
+        dataDomain[1].setDate(dataDomain[1].getDate() + 60);
+        w.dataDomain = dataDomain;
+      }
+    });
+  </script>
+</polymer-element>

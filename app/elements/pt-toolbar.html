@@ -1,0 +1,113 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../bower_components/core-toolbar/core-toolbar.html">
+<link rel="import" href="../bower_components/core-icons/core-icons.html">
+<link rel="import" href="../bower_components/core-icons/social-icons.html">
+<link rel="import" href="../bower_components/core-icons/maps-icons.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+
+
+<polymer-element name="pt-toolbar" attributes="authOptions showMap showGraphs smallThreshold">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      :host a, a:visited {
+        color: steelblue;
+        text-decoration: none;
+      }
+
+      :host a:hover {
+        color: lightsteelblue;
+      }
+
+      :host sup {
+        font-size: .6em;
+        /*font-style: italic;*/
+        color: #fe6557;
+      }
+
+      :host core-toolbar {
+        color: #f1f1f1;
+        font-weight: 300;
+      }
+
+      :host #mainTitle {
+        text-align: center;
+        font-weight: normal;
+      }
+
+      :host paper-menu-button div {
+        color: #333;
+        font-size: .8em;
+        padding: 10px;
+      }
+    </style>
+
+    <core-toolbar style="background: #386CB0;">
+      <template if="{{authOptions.homeLink}}">
+        <paper-icon-button
+          icon="home"
+          on-click="{{openHomeLink}}"></paper-icon-button>
+      </template>
+      <template if="{{smallThreshold}}">
+        <template if="{{showMap}}">
+          <paper-icon-button
+            on-click="{{toggleMap}}"
+            icon="view-list"></paper-icon-button>
+        </template>
+        <template if="{{showGraphs}}">
+          <paper-icon-button
+            on-click="{{toggleMap}}"
+            icon="maps:map"></paper-icon-button>
+        </template>
+        {{queryMatches}}
+      </template>
+      <span flex id="mainTitle">
+        Passage Timing <sup>BETA</sup>
+      </span>
+
+      <paper-menu-button icon="account-circle" halign="right" valign="bottom">
+        <template if="{{authOptions.username && authOptions.logoutLink}}">
+          <div>
+            <a href="{{authOptions.logoutLink}}">Logout</a>, {{authOptions.username}}
+          </div>
+        </template>
+        <template if="{{!authOptions.username}}">
+          <div>
+            <a href="{{authOptions.loginLink}}">Login</a>
+          </div>
+        </template>
+      </paper-menu-button>
+
+      <paper-menu-button icon="help" halign="right" valign="bottom">
+        <template repeat="{{i in authOptions.helpMenuItems}}">
+          <div><a href="{{i[1]}}">{{i[0]}}</a></div>
+        </template>
+      </paper-menu-button>
+    </core-toolbar>
+  </template>
+  <script>
+    Polymer({
+
+      authOptionsChanged: function() {
+        console.log("chagerooni");
+      },
+
+      openHomeLink: function() {
+        window.location = this.authOptions.homeLink;
+      },
+
+      toggleMap: function() {
+        if(this.smallThreshold) {
+          this.showGraphs = !this.showGraphs;
+          this.showMap = !this.showMap;
+        }
+      }
+
+    });
+  </script>
+</polymer-element>

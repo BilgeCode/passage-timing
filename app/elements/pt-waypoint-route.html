@@ -1,0 +1,325 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<polymer-element name="pt-waypoint-route" attributes="map passage">
+  <script type="text/javascript" src="../scripts/geo.js"></script>
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+  </template>
+  <script>
+    Polymer({
+
+      observe: {
+        'passage.waypoints.length': 'validateWaypointsChanged',
+        'passage.selectedWaypointIndex': 'selectedChanged'
+      },
+
+      created: function() {
+        this.markers = [];  // the waypoint markers on the map
+        this.path = null;   // the path drawn between the waypoints
+        this.generalIcon = null;  // hack to get setIcon to work;
+        this.generalZIndex = 10001;
+        this.hightlighterZIndex = 10000;
+      },
+
+      mapChanged: function() {
+        // don't do anything if the map and google api aren't loaded
+        if (typeof google == 'undefined' || typeof google.maps == 'undefined'
+          || this.map == undefined)
+          return;
+        this.markerHighlighter = new google.maps.Marker({
+          draggable: false,
+          visible: false,
+          map: this.map,
+          zIndex: this.hightlighterZIndex,
+          icon: this.getHightlightIcon()
+        });
+        this.setMapListeners();
+        this.drawWaypoints();
+      },
+
+      setMapListeners: function() {
+        self = this;
+        // right click to create a waypoint
+        google.maps.event.addListener(this.map, 'rightclick', function(e) {
+          self.map.set('disableDoubleClickZoom', true);
+          self.addWaypoint(e);
+        });
+        // deselect any waypoints with a click away from a marker
+      	google.maps.event.addListener(this.map, 'click', function(event){
+          self.map.set('disableDoubleClickZoom', false);
+      	  self.passage.selectedWaypointIndex = null;
+      	});
+      },
+
+      getPathOptions: function() {
+      	return {
+      		strokeColor: "#0000ff",
+      		strokeOpacity: 0.3,
+      		strokeWeight: 3
+      	}
+      },
+
+      getGeneralIcon: function() {
+        /*
+          Returns the options for most waypoint icons: the small circle
+        */
+        return {
+  				path: google.maps.SymbolPath.CIRCLE,
+  				scale: 4,
+  				fillColor: '#ffffff',
+  				strokeColor: '#0000FF',
+  				strokeWeight: 2,
+  				fillOpacity: 1
+        };
+
+      },
+
+      getHightlightIcon: function() {
+        /*
+          Returns the marker that will sit below the selected waypoint marker
+        */
+        return {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 15,
+          fillColor: '#ffff66',
+          strokeColor: '#ffff66',
+          strokeWeight: 2,
+          fillOpacity: 0.4,
+          strokeOpacity: 0.8
+        };
+      },
+
+      validateWaypointsChanged: function(oldValue, newValue) {
+        // @todo: only redraw if a waypoint was deleted
+
+        // don't do anything if the map and google api aren't loaded
+        if (typeof google == 'undefined' || typeof google.maps == 'undefined'
+          || this.map == undefined)
+          return;
+        this.drawWaypoints();
+      },
+
+      drawWaypoints: function() {
+
+        if(this.passage == undefined || this.passage == null) {
+          return;
+        }
+
+        if(this.map != undefined && this.passage.center != null) {
+          var c = new google.maps.LatLng(this.passage.center[0], this.passage.center[1]);
+          this.map.setCenter(c);
+        }
+        if(this.map != undefined && this.passage.zoom != null) {
+          this.map.setZoom(this.passage.zoom);
+        }
+        if(this.map != undefined && this.passage.mapType != null) {
+          this.map.setMapTypeId(google.maps.MapTypeId[this.passage.mapType.toUpperCase()]);
+        }
+
+        if(this.passage.waypoints != undefined) {
+
+          // remove any existing markers first
+          if(this.markers.length > 0) {
+            for (var i = 0; i < this.markers.length; i++) {
+              this.markers[i].setMap(null);
+            }
+          }
+          this.markers = [];
+
+          for(var i=0; i < this.passage.waypoints.length; i++) {
+            this.addMarkerForWaypoint(this.passage.waypoints[i]);
+          }
+          this.updateIcons();
+          this.updatePath();
+          this.doWaypointCalculations();
+        }
+      },
+
+      addWaypoint: function(event) {
+        /*
+          Handles the right-click event that creates a waypoint
+        */
+        var w = {
+          latLng: [event.latLng.lat(), event.latLng.lng()],
+          name: null,
+          index: this.passage.waypoints.length,
+          latLngStr: this.latLngToString([event.latLng.lat(), event.latLng.lng()]),
+          showSun: false,
+          hasCustomSpeed: false,
+          collapsed: false
+        }
+
+        this.passage.waypoints.push(w);
+        this.passage.selectedWaypointIndex = w.index; // select upon creation
+        this.addMarkerForWaypoint(w);
+
+        // @todo: add timezone support
+        d = new Date();
+        // console.log(d);
+        // console.log("https://maps.googleapis.com/maps/api/timezone/json?location=" +
+        //   event.latLng.lat() +"," + event.latLng.lng() +
+        //   "&timestamp=" + Math.floor(d.getTime()/ 1000) +
+        //   "&sensor=false&key=AIzaSyB_7n4r1znCQo2DXkeDppi7ZD26ypl5y4E");
+
+        this.updatePath();
+        this.updateIcons();
+        this.doWaypointCalculations();
+      },
+
+      addMarkerForWaypoint: function(waypoint) {
+    		/*
+          Create the marker
+
+          Note: initially all the markers are circles, but updated with the path
+        */
+    		var m = new google.maps.Marker({
+    			map: this.map,
+    			position: new google.maps.LatLng(waypoint.latLng[0], waypoint.latLng[1]),
+    			draggable: true,
+          zIndex: this.generalZIndex,
+          icon: this.getGeneralIcon()
+    		});
+        this.generalIcon = m.getIcon();
+        m.waypoint = waypoint;
+
+        var self = this;
+        google.maps.event.addListener(m, 'dragend', function() {
+          // when dragged, update the waypoint position
+          m.waypoint.latLng = [m.getPosition().lat(), m.getPosition().lng()];
+          m.waypoint.latLngStr = self.latLngToString(m.waypoint.latLng);
+          self.updatePath();
+          self.doWaypointCalculations();
+          self.passage.selectedWaypointIndex = m.waypoint.index;
+          self.markerHighlighter.setPosition(m.getPosition());
+        });
+        google.maps.event.addListener(m, 'click', function() {
+          // clicking marks this waypoint as the "selected waypoint"
+          console.log("waypoint selected! (" + m.waypoint.index + ")");
+          self.passage.selectedWaypointIndex = m.waypoint.index;
+          // this.map.setCenter(m.getPosition());
+        });
+
+        this.markers.push(m);
+      },
+
+      selectedChanged: function() {
+
+        // don't do anything if the map and google api aren't loaded
+        if (typeof google == 'undefined' || typeof google.maps == 'undefined'
+          || this.map == undefined)
+          return;
+
+        var m = this.markers[this.passage.selectedWaypointIndex];
+        if(m != undefined) {
+          this.markerHighlighter.setPosition(m.getPosition());
+          this.markerHighlighter.setVisible(true);
+          m.setAnimation(google.maps.Animation.BOUNCE);
+          setTimeout(function() {
+              m.setAnimation(null)
+          }, 900);
+        }
+        else {
+          this.markerHighlighter.setVisible(false);
+        }
+      },
+
+      latLngToString: function(latLngArray) {
+        // converts a lat/lng array, ex: [41.35, -71.3267]
+        // from decimal to string with degrees
+        // using geo.js http://www.movable-type.co.uk/scripts/latlong.html
+        return Geo.toLat(latLngArray[0]) + ", " + Geo.toLon(latLngArray[1]);
+      },
+
+      updatePath: function() {
+        /*
+          Update the lines between the waypoints in the passage
+        */
+        var newPath = [];
+        for(var i=0; i<this.markers.length; i++) {
+          newPath.push(this.markers[i].getPosition());
+        }
+    		if(this.path != null) {
+    			this.path.setPath(newPath);
+    		}
+    		else {
+    			this.path = new google.maps.Polyline(this.getPathOptions());
+    			this.path.setPath(newPath);
+    			this.path.setMap(this.map);
+    		}
+      },
+
+      updateIcons: function() {
+        /*
+          The first waypoint is a green pin, the last one is red and all the rest are circles
+        */
+    		for(var i=0; i<this.markers.length; i++) {
+          m = this.markers[i];
+          switch(i)
+          {
+          case 0:
+            m.setIcon('http://maps.google.com/mapfiles/ms/icons/green.png');
+            break;
+          case this.markers.length-1:
+            m.setIcon('http://maps.google.com/mapfiles/ms/icons/red.png');
+            break;
+          default:
+            m.setIcon(this.generalIcon);
+          }
+    		}
+      },
+
+      doWaypointCalculations: function() {
+        /*
+          Update all the distances between waypoints and the overall passage distance
+        */
+
+        if (typeof google == 'undefined' || typeof google.maps == 'undefined'
+          || this.map == undefined)
+          return;
+
+        this.passage.totalDistance = 0;
+
+        for(var i=0; i<this.markers.length; i++) {
+          var m = this.markers[i];
+
+          // Distance
+          if(i == 0) {
+            m.waypoint.distanceFromLast = 0;
+            m.waypoint.distanceFromStart = 0;
+          }
+          else {
+    		    d = google.maps.geometry.spherical.computeDistanceBetween(
+    		      m.getPosition(),
+    		      this.markers[i-1].getPosition()
+            );
+    		    d = d * 0.000539957; // Conver to Nautical Miles
+
+    		    m.waypoint.distanceFromLast = d;
+    		    this.passage.totalDistance += d;
+    		    m.waypoint.distanceFromStart = this.passage.totalDistance;
+
+            this.markers[i-1].waypoint.distanceToNext = d;
+          }
+
+          // Heading
+          if(i < this.markers.length - 1) {
+            h = google.maps.geometry.spherical.computeHeading(
+              m.getPosition(),
+              this.markers[i+1].getPosition()
+            );
+            m.waypoint.headingToNext = h;
+          }
+          else {
+            m.waypoint.headingToNext = null;
+            m.waypoint.distanceToNext = null;
+          }
+        }
+      }
+
+    });
+  </script>
+</polymer-element>

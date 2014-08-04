@@ -1,0 +1,38 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="pt-waypoint-container.html">
+
+<polymer-element
+  name="pt-waypoint-list"
+  attributes="passage tideEndpoint width apiKey">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <template repeat="{{w in passage.waypoints}}">
+      <pt-waypoint-container
+        apiKey="{{apiKey}}"
+        passage="{{passage}}"
+        tideEndpoint="{{tideEndpoint}}"
+        waypoint="{{w}}"
+        width="{{width}}">
+      </bc-waypoint-graph>
+    </template>
+
+  </template>
+  <script>
+    Polymer({
+
+      observe: {
+        "passage.waypoints.length": "waypointsChanged"
+      },
+
+      waypointsChanged: function() {
+        console.log("Waypoint List");
+        console.log(this.passage.waypoints);
+      }
+    });
+  </script>
+</polymer-element>

@@ -1,0 +1,54 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/google-map/google-map.html">
+
+<polymer-element
+  name="pt-google-map"
+  extends="google-map">
+
+  <template>
+    <shadow></shadow>
+  </template>
+  <script>
+    Polymer('pt-google-map', {
+
+      libraries: "geometry",
+
+      mapApiLoaded: function() {
+        this.super();
+
+        var self = this;
+        // make sure the mapType is bound to the property
+        google.maps.event.addListener(this.map, 'maptypeid_changed', function(event){
+          self.mapType = self.map.getMapTypeId();
+        });
+
+        // Change the center
+        google.maps.event.addListener(this.map, 'dragend', function() {
+          self.latitude = self.map.getCenter().lat();
+          self.longitude = self.map.getCenter().lng();
+        });
+
+        // Zoom level changed
+        google.maps.event.addListener(this.map, 'zoom_changed', function(){
+          self.zoom = self.map.getZoom();
+        })
+      },
+
+      getMapOptions: function() {
+        var mapOptions = this.super();
+        mapOptions["streetViewControl"] = false;
+        mapOptions["panControl"] = false;
+        mapOptions["scrollwheel"] = false;
+
+        // set the center from the passage if it's available
+        if(this.passage != undefined) {
+          this.latitude = this.passage.center[0];
+          this.longitude = this.passage.center[1];
+        }
+
+        return mapOptions;
+      }
+
+    });
+  </script>
+</polymer-element>

@@ -1,0 +1,366 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/bc-d3-dateline/bc-d3-dateline.html">
+<link rel="import" href="../bower_components/bc-sun-chart/bc-sun-chart.html">
+<link rel="import" href="pt-waypoint-properties.html">
+<link rel="import" href="pt-tide-chart.html">
+
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/core-icon/core-icon.html">
+<link rel="import" href="../bower_components/core-icons/hardware-icons.html">
+
+<polymer-element
+  name="pt-waypoint-container"
+  attributes="passage waypoint tideEndpoint width apiKey">
+  <template>
+    <style>
+      :host {
+        display: block;
+        margin: 0px 0px;
+        padding: 0px 0px 0px 0px;
+        text-align: center;
+        clear: both;
+        background-color: #ffffcc;
+        border-width: 10px 0px 0px 0px;
+        border-style: solid;
+        border-color: #ffffcc;
+      }
+
+      :host hr {
+        border-color: white;
+      }
+
+      :host bc-d3-dateline::shadow .chartContainer {
+        background-color: transparent;
+        border-color: transparent;
+        border-width: 0;
+      }
+
+      :host bc-sun-chart::shadow /deep/ .centerLine {
+        stroke: #fe6557;
+      }
+
+      :host bc-d3-dateline::shadow .axis path, bc-d3-dateline::shadow .axis line {
+      	stroke: #555;
+      }
+
+      :host bc-d3-dateline::shadow g.tick text {
+        fill: #555;
+        font-size: .9em;
+      }
+
+      :host p {
+        margin: 5px;
+        padding: 0px;
+      }
+
+      :host #buttonCol {
+        /*background-color: #ccc;*/
+        /*border: 1px solid #bbb;*/
+        color: #aaa;
+        margin: 0px;
+        padding: 0px;
+      }
+
+      /*:host paper-icon-button::shadow core-icon {
+        height: 16px;
+        width: 16px;
+      }*/
+
+      #waypointCollapse {
+        padding-bottom: 10px;
+      }
+
+      #waypointTransition {
+        font-size: .9em;
+        background-color: #ddd;
+        padding: 10px;
+        margin: 0px;
+      }
+
+      #waypointTransition core-icon {
+        height: 1.2em;
+        width: 1.2em;
+      }
+
+      :host paper-button[autofocus] {
+        color: steelblue;
+      }
+
+      :host .waypointName {
+        color: steelblue;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+
+      #collapseButton {
+        float: right;
+        clear: none;
+        color: #bbb;
+        margin: 0px;
+        padding: 0px;
+        margin-top: -.9em;
+      }
+
+      #positionCollapse {
+        padding-bottom: 10px;
+        font-size: 1em;
+        color: #666;
+        letter-spacing: 2px;
+      }
+
+      :host .positionSubTitle {
+        text-align: center;
+        font-size: 1em;
+        color: #666;
+        margin: 5px;
+        margin-top: -5px;
+        letter-spacing: 2px;
+      }
+    </style>
+
+    <paper-dialog id="waypointPropertiesDialog" heading="Waypoint Settings">
+      <pt-waypoint-properties
+        tideEndpoint="{{tideEndpoint}}"
+        apiKey="{{apiKey}}"
+        waypoint="{{waypoint}}"
+        passage="{{passage}}"></pt-waypoint-properties>
+
+      <paper-button label="Done" affirmative autofocus role="button"
+        tabindex="0" aria-label="Done"></paper-button>
+    </paper-dialog>
+
+    <paper-icon-button
+      id="collapseButton"
+      on-click="{{toggleCollapse}}"
+      icon="expand-less"></paper-icon-button>
+    <core-collapse id="positionCollapse" on-click="{{selectWaypoint}}">
+      <div center>
+        <template if="{{waypoint.name != null}}">
+          <span class="waypointName">
+            {{waypoint.name}}
+          </span>
+        </template>
+        {{waypoint.latLngStr}}
+      </div>
+    </core-collapse>
+
+    <core-collapse id="waypointCollapse" on-click="{{selectWaypoint}}">
+      <div horizontal layout style="margin: 0px; padding: 0px;">
+        <div id="buttonCol">
+          <paper-icon-button
+            on-click="{{showPropertiesDialog}}"
+            icon="create"></paper-icon-button>
+          <br/>
+          <paper-icon-button
+            on-click="{{deleteWaypoint}}"
+            icon="delete"></paper-icon-button>
+        </div>
+        <div flex>
+          <p style="text-align: center;font-weight: bold;">
+              {{waypoint.arrivalTime | displayDate}}
+          </p>
+          <p class="positionSubTitle">
+              <template if="{{waypoint.name != null}}">
+                <span class="waypointName">
+                  {{waypoint.name}}
+                </span>
+              </template>
+              {{waypoint.latLngStr}}
+          </p>
+          <template if="{{waypoint.showSun}}">
+            <bc-sun-chart
+              dataDomain="{{waypoint.dataDomain}}"
+              domain="{{waypoint.displayDomain}}"
+              height="40"
+              latitude="{{waypoint.latLng[0]}}"
+              longitude="{{waypoint.latLng[1]}}"
+              timezone="{{passage.timeZone}}"
+              width="{{width}}"
+              ></bc-sun-chart>
+          </template>
+
+          <template if="{{waypoint.showTide && waypoint.tideStationId}}">
+            <pt-tide-chart
+              passage="{{passage}}"
+              waypoint="{{waypoint}}"
+              width="{{width}}"
+              height="50"
+              tideEndpoint="{{tideEndpoint}}">
+            </pt-tide-chart>
+          </template>
+
+          <bc-d3-dateline
+            class="dateline"
+            height="25"
+            domain="{{waypoint.displayDomain}}"
+            width="{{width}}"
+            debug="{{debug}}"
+            dateformat="{{datelineFormat}}"
+            timezone="{{passage.timeZone}}"
+            centerline="{{centerline}}"></bc-d3-dateline>
+        </div>
+      </div>
+
+    </core-collapse>
+
+    <template if="{{waypoint.distanceToNext && waypoint.headingToNext}}">
+      <!-- <hr> -->
+      <div layout horizontal id="waypointTransition" style="clear: both;">
+        <div flex>
+          <core-icon icon="explore"></core-icon>
+          {{waypoint.headingToNext | getDirection }}
+          ({{waypoint.headingToNext | convert180DegreesTo360 | roundDecimal}}°)
+        </div>
+        <div flex>
+          <core-icon icon="hardware:keyboard-tab"></core-icon>
+          {{waypoint.distanceToNext | roundDecimal}}
+          <abbr title="Nautical Miles">nm</abbr>
+        </div>
+        <div flex>
+          <core-icon icon="device:timer"></core-icon>
+          {{waypoint.hoursToNext | displayDecimalHour}}hrs
+          <!-- <small>({{waypoint.nextHoursOverall | displayDecimalHour}})</small> -->
+        </div>
+        <div flex>
+          <core-icon icon="swap-driving-apps-wheel"></core-icon>
+          <template
+            if="{{waypoint.hasCustomSpeed}}">
+              {{waypoint.estimatedSpeedToNext}}
+          </template>
+          <template
+            if="{{!waypoint.hasCustomSpeed}}">
+              {{passage.estimatedAvgSpeed}}
+          </template>
+          <abbr title="Knots">kts</abbr>
+        </div>
+      </div>
+      <!-- <hr> -->
+    </template>
+
+  </template>
+
+  <script src="../scripts/bc_utils.js"></script>
+  <script>
+    Polymer({
+      centerline: true,
+
+      observe: {
+        "waypoint.collapsed": "collapseChanged",
+        'passage.selectedWaypointIndex': 'selectedChanged',
+      },
+
+      created: function() {
+        this.displayFormat = d3.time.format("%a - %b %e - %H:%M");
+        this.datelineFormat = "%H:%M";
+      },
+
+      ready: function() {
+        this.collapseChanged();
+      },
+
+      collapseChanged: function() {
+        if(this.waypoint != null) { // catches an issue in firefox
+          this.$.waypointCollapse.opened = !this.waypoint.collapsed;
+          this.$.positionCollapse.opened = this.waypoint.collapsed;
+
+          if(this.waypoint.collapsed) {
+            this.$.collapseButton.icon = "expand-more";
+          }
+          else {
+            this.$.collapseButton.icon = "expand-less";
+          }
+        }
+        else {
+          this.$.waypointCollapse.opened = true;
+          this.$.positionCollapse.opened = false;
+        }
+      },
+
+      /*
+       * Google maps provides degrees in the range -180 to 180. For our purposes
+       * this should really be 0 to 360.
+       */
+      convert180DegreesTo360: function(degrees) {
+        if(degrees < 0) {return 360 + degrees;}
+        return degrees;
+      },
+
+      deleteWaypoint: function() {
+        var needsRecalc = true;
+
+        if(this.waypoint.index == this.passage.waypoints.length-1) {
+          needsRecalc = false;
+        }
+
+        this.passage.selectedWaypointIndex = null;
+        this.passage.waypoints.splice(this.waypoint.index, 1);
+
+        if(needsRecalc) {
+          for(var i=0; i<this.passage.waypoints.length; i++) {
+            this.passage.waypoints[i].index = i;
+          }
+        }
+      },
+
+      displayDate: function(date) {
+        if(date != null && date != undefined) {
+          return this.displayFormat(date);
+        }
+          return "";
+      },
+
+      displayDecimalHour: function(h) {
+        if(h != null) {
+          // convert an hour like 1.5 to 1:30
+          var m = Math.floor(h % 1 * 60) + "";
+          if(m.length == 1) {
+            m = "0" + m;
+          }
+          return Math.floor(h) + ":" + m;
+        }
+        return ""
+      },
+
+      getDirection: function(degrees) {
+        if(degrees != null && degrees != undefined) {
+          return getCompassDirectionFromDegrees180(degrees);
+        }
+        return "";
+      },
+
+      roundDecimal: function(value) {
+        if(value != null) {
+          return value.toFixed(1);
+        }
+      },
+
+      showPropertiesDialog: function() {
+        this.$.waypointPropertiesDialog.toggle();
+      },
+
+      selectedChanged: function() {
+        if(this.passage.selectedWaypointIndex == this.waypoint.index) {
+          this.style.backgroundColor = "#fff";
+          this.style.borderColor = "#FFF9C4";
+        }
+        else {
+          this.style.backgroundColor = "transparent";
+          this.style.borderColor = "transparent";
+        }
+      },
+
+      selectWaypoint: function() {
+        this.passage.selectedWaypointIndex = this.waypoint.index;
+      },
+
+      toggleCollapse: function() {
+        this.waypoint.collapsed = !this.waypoint.collapsed;
+      },
+
+      waypointChanged: function() {
+        console.log("waypoint changed");
+      }
+    });
+  </script>
+</polymer-element>

@@ -1,0 +1,446 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/core-collapse/core-collapse.html">
+<!-- paper-elements -->
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<!-- core-elements -->
+<link rel="import" href="../bower_components/core-tooltip/core-tooltip.html">
+<link rel="import" href="../bower_components/core-icons/device-icons.html">
+<link rel="import" href="../bower_components/core-icons/social-icons.html">
+<link rel="import" href="../bower_components/core-icons/hardware-icons.html">
+
+<link rel="import" href="../bower_components/brick-calendar/src/brick-calendar.html">
+
+<polymer-element
+  name="pt-passage-properties"
+  attributes="passage passageEndpoint mode loginLink">
+
+  <template>
+    <link rel="stylesheet" href="../styles/calendar.css">
+    <style>
+      :host {
+        display: block;
+        padding: 5px 10px;
+      }
+
+      :host a, :host a:visited {
+        color: lightsteelblue;
+        text-decoration: none;
+      }
+
+      :host a:hover {
+        color: steelblue;
+      }
+
+      :host h1 {
+        font-size: 1.4em;
+        font-weight: 300;
+      }
+
+      :host h2 {
+        font-size: 1em;
+        font-weight: 300;
+      }
+
+      :host #saveButton {
+        background: #8bc34a;
+        float: right;
+        margin: 10px;
+      }
+
+      :host h2 core-tooltip core-icon {
+        height: 1.2em;
+        width: 1.2em;
+      }
+
+      paper-slider {
+        width: 100%;
+      }
+
+      #editPassageDialog label {
+        display: block;
+        /*color: #4285f4;*/
+        font-size: .9em;
+        margin-bottom: 5px;
+        margin-top: 10px;
+        font-weight: bold;
+      }
+
+      paper-radio-button {
+        display: block;
+        margin: 0px;
+        padding: 0px;
+      }
+
+      .dialogTrigger, core-tooltip large {
+        cursor: pointer;
+      }
+
+      .warningIcon {
+        color: #F0AD4E;
+      }
+
+      :host paper-button[autofocus] {
+        color: #4285f4;
+      }
+
+      :host #demoNote {
+        float: right;
+        margin-top: -10px;
+        font-weight: 200;
+        /*background-color: #888;*/
+        border: 1px dashed #F0AD4E;
+        color: #888;
+        padding: 4px 10px;
+      }
+
+      :host paper-toast {
+        left: none;
+        right: 10px;
+        text-align: right;
+      }
+
+    </style>
+
+    <script src="../bower_components/jquery-cookie/jquery.cookie.js"></script>
+
+    <!-- Toasts -->
+    <paper-toast text="Your passage has been saved." id="saveToast">
+      <div style="color: #8bc34a;">
+        SAVED
+      </div>
+    </paper-toast>
+
+    <paper-toast text="There was a problem saving your passage." id="errorToast">
+      <div style="color: #fe6557;">
+        ERROR
+      </div>
+    </paper-toast>
+
+    <!-- Editing Dialogs -->
+    <paper-dialog id="nameDialog" heading="Passage Name">
+      <br/>
+      <paper-input
+        inputValue="{{passage.name}}"></paper-input>
+
+      <paper-button label="Done" affirmative autofocus role="button"
+        tabindex="0" aria-label="Done"></paper-button>
+    </paper-dialog>
+
+    <paper-dialog id="departureDateDialog" heading="Departure Date">
+      <br/>
+
+      <label>The date your window starts</label><br/><br/>
+      <brick-calendar id="calendar" controls chosen="{{passage.name}}"></brick-calendar>
+
+      <paper-button label="Done" affirmative autofocus role="button"
+        tabindex="0" aria-label="Done"></paper-button>
+    </paper-dialog>
+
+    <paper-dialog id="speedDialog" heading="Estimated Speed">
+      <br/>
+
+      <label>
+        Your average speed in kts<br/>
+        You can change this per waypoint.
+      </label><br/>
+      <paper-slider
+        min=".5" max="15"
+        value="{{passage.estimatedAvgSpeed}}"
+        step=".05"
+        editable></paper-slider>
+
+      <paper-button label="Done" affirmative autofocus role="button"
+        tabindex="0" aria-label="Done"></paper-button>
+    </paper-dialog>
+
+    <paper-dialog id="timeZoneDialog" heading="Time Zone">
+      <br/>
+
+      <paper-radio-group selected="{{passage.timeZone}}">
+        <paper-radio-button name="America/New_York" label="America/New_York"></paper-radio-button>
+        <paper-radio-button name="America/Los_Angeles" label="America/Los_Angeles"></paper-radio-button>
+      </paper-radio-group>
+
+      <paper-button label="Done" affirmative autofocus role="button"
+        tabindex="0" aria-label="Done"></paper-button>
+    </paper-dialog>
+    <!-- End Dialogs -->
+
+    <template if="{{passage != null}}">
+      <template if="{{showSaveButton}}">
+        <paper-fab
+          class="mini"
+          icon="save"
+          on-click="{{store}}"
+          id="saveButton"></paper-fab>
+
+        <!-- <div class='pull-right'>
+          <button
+            class='btn btn-success btn-sm pull-right'
+            style="margin: 2px;">
+            Save
+          </button>
+        </div> -->
+      </template>
+
+      <h1>
+        <template if="{{readonly}}">
+          <core-tooltip large
+            label="READ-ONLY: you do not have access to save changes">
+            <core-icon class="warningIcon" icon="error"></core-icon>
+          </core-tooltip>
+        </template>
+        <core-tooltip large
+          label="Click to edit"
+          class="dialogTrigger"
+          on-click="{{showNameDialog}}">
+          {{passage.name}}
+        </core-tooltip large>
+        <template if="{{demo}}">
+          <span id="demoNote">
+            Demo Mode<template if="{{loginLink}}">:
+              <a href="{{loginLink}}">Sign up</a> to save passages</span>
+            </template>
+        </template>
+      </h1>
+
+      <h2>
+        <core-tooltip large
+          label="Click to change your departure date."
+          class="dialogTrigger"
+          on-click="{{showDepartureDateDialog}}">
+          <core-icon icon="today"></core-icon>
+          {{passage.departureDate}}</span>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+        </core-tooltip large>
+
+        <core-tooltip large
+          label="Click to change your timezone."
+          class="dialogTrigger"
+          on-click="{{showTimeZoneDialog}}">
+          <core-icon icon="social:public"></core-icon>
+          <span title="Time Zone">{{passage.timeZone}}</span>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+        </core-tooltip large>
+
+        <core-tooltip large
+          label="Click to change your estimated speed."
+          class="dialogTrigger"
+          on-click="{{showSpeedDialog}}">
+          <core-icon icon="swap-driving-apps-wheel"></core-icon>
+          {{passage.estimatedAvgSpeed}}
+          <abbr title="Nautical Miles per Hour">kts</abbr>
+        </core-tooltip large>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+
+        <core-tooltip large label="The calcuted duration of the passage">
+          <core-icon icon="device:timer"></core-icon>
+          {{passage.hoursOverall | displayDecimalHour}} hrs
+        </core-tooltip large>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+
+        <core-tooltip large label="The calculated distance of the passage">
+          <core-icon icon="hardware:keyboard-tab"></core-icon>
+          {{ passage.totalDistance | roundDecimal}}
+          <abbr title="Nautical Miles">nm</abbr>
+        </core-tooltip large>
+
+      </h2>
+    </template>
+
+    <template if="{{passage == null}}">
+      <h1>
+        Loading...
+      </h1>
+    </template>
+  </template>
+
+  <script>
+    Polymer('pt-passage-properties', {
+
+      // Attributes
+      mode: null,
+      passageEndpoint: null,
+
+      // Properties
+      demo: false,
+      readonly: true,
+      showSaveButton: false,
+
+      ready: function() {
+
+        var dp = this.$.calendar;
+        var self = this;
+        dp.addEventListener('datetoggleon', function(e) {
+          console.log('date changed');
+          self.passage.departureDate = e.detail.iso;
+          dp.chosen = e.detail.iso;
+        });
+
+        this.tzList = ['America/New_York', 'America/Los_Angeles']
+
+      },
+
+      openDatePicker: function(event) {
+        $(this.$.dp).datepicker("show");
+      },
+
+      showEditDialog: function(obj) {
+        /*
+          This should work, and would be a lot easier, but for some reason
+          I can't get it working :(
+          So, I have to write them all individually
+        */
+        document.querySelector("#" + obj.target.id).toggle();
+      },
+
+      showDepartureDateDialog: function() {
+        this.$.departureDateDialog.toggle();
+      },
+
+      showNameDialog: function() {
+        this.$.nameDialog.toggle();
+      },
+
+      showTimeZoneDialog: function() {
+        this.$.timeZoneDialog.toggle();
+      },
+
+      showSpeedDialog: function() {
+        this.$.speedDialog.toggle();
+      },
+
+      updateDate: function(e) {
+        // a filler-method because datepicker doesn't trigger
+        // the polymer data-binding changes
+        this.passage.departureDate = e.detail.iso;
+      },
+
+      modeChanged: function() {
+        console.log("NEW MODE: " + this.mode);
+        switch(this.mode) {
+          case 'demo':
+            this.demo = true;
+            this.showSaveButton = false;
+            var d = new Date();
+            this.passage = {
+              name: "Demo Passage",
+              waypoints: [],
+              estimatedAvgSpeed: 4,
+              timeZone: "America/New_York",
+              departureDate: d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(),
+              latitude: 41.35,
+              longitude: -71.3267,
+              zoom: 9,
+              mapType: "terrain",
+              selectedWaypointIndex: null,
+              hoursOverall: 0,
+              totalDistance: 0,
+            };
+            break;
+          case 'readonly':
+            this.showSaveButton = false;
+            this.readonly = true;
+            break;
+          default:
+            this.showSaveButton = true;
+            this.readonly = false;
+            this.demo = false;
+        }
+      },
+
+      roundDecimal: function(value) {
+        if(value != null) {
+          return value.toFixed(2);
+        }
+      },
+
+      /*
+        @todo: this is a dupe. Should probably come from a shared parent
+      */
+      displayDecimalHour: function(h) {
+        if(h != null) {
+          // convert an hour like 1.5 to 1:30
+          var m = Math.floor(h % 1 * 60) + "";
+          if(m.length == 1) {
+            m = "0" + m;
+          }
+          return Math.floor(h) + ":" + m;
+        }
+        return ""
+      },
+
+      /*
+        When the endpoint changes, pull the passage data down.
+      */
+      passageEndpointChanged: function() {
+
+        if(this.passageEndpoint != null && this.passageEndpoint != undefined) {
+
+          this.passage = null;
+          var self = this;
+          $.ajax({
+            url: this.passageEndpoint,
+            success: function(data) {
+              console.log(data);
+              // convert the dates from strings
+
+              self.passage = data.passage_data;
+            },
+            dataType: 'json'
+          });
+        }
+      },
+
+      /*
+        Storage function for saving to backend
+      */
+      store: function() {
+        if(this.passageEndpoint) {
+
+          var self = this;
+          var passage_str = JSON.stringify(this.passage);
+          passage_str = passage_str.replace(/"/g,'\\"');
+          var data = '{"passage_data": "' + passage_str + '"}';
+          var csrftoken = $.cookie('csrftoken');
+
+          function csrfSafeMethod(method) {
+              // these HTTP methods do not require CSRF protection
+              return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+          }
+
+          $.ajax({
+            url : this.passageEndpoint,
+            data : data,
+            type : 'PATCH',
+            contentType : 'application/json',
+            crossDomain: false,
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type)) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            },
+            dataType: 'json',
+            success: function(data, textStatus, jqXHR) {
+              self.$.saveToast.innerHTML = '<div style="color: #8bc34a;">' + textStatus + '</div>';
+              self.$.saveToast.show();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              self.$.errorToast.innerHTML = '<div style="color: #fe6557;">' + textStatus + '</div>';
+              self.$.errorToast.show();
+            }
+          });
+
+          // console.log(JSON.stringify(this.passage));
+        }
+      }
+    });
+  </script>
+</polymer-element>

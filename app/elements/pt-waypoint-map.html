@@ -1,0 +1,44 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="pt-google-map.html">
+<link rel="import" href="pt-waypoint-route.html">
+
+<polymer-element
+  name="pt-waypoint-map"
+  attributes="passage waypoints apiKey">
+
+  <template>
+    <style>
+    :host {
+      position: relative;
+    }
+
+    pt-google-map {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+    </style>
+
+    <pt-google-map
+      apiKey="{{apiKey}}"
+      map="{{map}}"
+      latitude="{{passage.latitude}}"
+      longitude="{{passage.longitude}}"
+      zoom="{{passage.zoom}}"
+      fitToMarkers=true
+      mapType="{{passage.mapType}}">
+    </pt-google-map>
+    <pt-waypoint-route
+      map="{{map}}"
+      passage="{{passage}}">
+    </pt-waypoint-route>
+
+  </template>
+  <script>
+    Polymer('pt-waypoint-map', {
+
+    });
+  </script>
+</polymer-element>
