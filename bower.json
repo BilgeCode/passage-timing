@@ -8,7 +8,7 @@
     "bc-sun-chart": "bilgecode/bc-sun-chart#~0.3",
     "brick-calendar": "jamstooks/brick-calendar",
     "core-elements": "Polymer/core-elements#~0.3",
-    "core-icon": "Polymer/core-icon#master",
+    "core-icon": "Polymer/core-icon#~0.3",
     "google-map": "GoogleWebComponents/google-map#~0.3",
     "jquery": "jquery/jquery#1.9.1",
     "jquery-cookie": "carhartl/jquery-cookie#~1.4",
