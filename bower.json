@@ -1,19 +1,20 @@
 {
   "name": "passage-timing",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "dependencies": {
-    "bc-d3-datebrush": "bilgecode/bc-d3-datebrush#~0.3",
-    "bc-d3-dateline": "bilgecode/bc-d3-dateline#~0.3",
-    "bc-d3-areachart": "bilgecode/bc-d3-areachart#~0.3",
-    "bc-sun-chart": "bilgecode/bc-sun-chart#~0.3",
+    "bc-d3-datebrush": "bilgecode/bc-d3-datebrush#0.4.0",
+    "bc-d3-dateline": "bilgecode/bc-d3-dateline#0.4.0",
+    "bc-d3-areachart": "bilgecode/bc-d3-areachart#0.4.0",
+    "bc-sun-chart": "bilgecode/bc-sun-chart#0.4.0",
     "brick-calendar": "jamstooks/brick-calendar",
-    "core-elements": "Polymer/core-elements#~0.3",
-    "core-icon": "Polymer/core-icon#~0.3",
-    "google-map": "GoogleWebComponents/google-map#~0.3",
+    "core-elements": "Polymer/core-elements#0.4.0",
+    "core-icon": "Polymer/core-icon#0.4.0",
+    "google-apis": "jamstooks/google-apis#master",
+    "google-map": "jamstooks/google-map#master",
     "jquery": "jquery/jquery#1.9.1",
     "jquery-cookie": "carhartl/jquery-cookie#~1.4",
-    "paper-elements": "Polymer/paper-elements#~0.3",
-    "polymer": "Polymer/polymer#~0.3"
+    "paper-elements": "Polymer/paper-elements#0.4.0",
+    "polymer": "Polymer/polymer#0.4.0"
   },
   "devDependencies": {}
 }
