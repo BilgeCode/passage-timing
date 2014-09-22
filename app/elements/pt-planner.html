@@ -10,7 +10,7 @@
 
 <polymer-element
   name="pt-planner"
-  attributes="passageEndpoint tideEndpoint mode authOptions">
+  attributes="passageEndpoint tideEndpoint mode authOptions apiKey">
 
   <!-- included timezone-js here because it's used by multiple elements -->
   <script src="../bower_components/jquery/jquery.min.js"></script>
@@ -137,6 +137,7 @@
             <pt-passage-properties
               loginLink="{{authOptions.loginLink}}"
               mode="{{mode}}"
+              apiKey="{{apiKey}}"
               passage="{{passage}}"
               passageEndpoint="{{passageEndpoint}}"></pt-passage-properties>
             <div flex layout vertical>
@@ -159,6 +160,9 @@
       responsiveWidth: "768px",
       smallThreshold: false,
 
+      apiKey: null,
+      passage: null,
+
       /*
        * Trying to draw all these apis
        */
@@ -175,9 +179,6 @@
         // timezoneJS.timezone.loadingScheme = timezoneJS.timezone.loadingSchemes.PRELOAD_ALL;
         // timezoneJS.timezone.init();
         timezoneJS.timezone.init({async: false});
-
-        this.apiKey = "AIzaSyB_7n4r1znCQo2DXkeDppi7ZD26ypl5y4E";
-        this.passage = null;
 
         // this.passage = {
         //   name: "test passage",
