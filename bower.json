@@ -23,6 +23,8 @@
     "polymer": "^0.4.0",
     "bc-d3-base": "0.4.0",
     "platform": "^0.4.0",
-    "core-component-page": "^0.4.0"
+    "core-component-page": "^0.4.0",
+    "bc-d3-areachart": "#~0.4",
+    "core-shared-lib": "#^0.4.0"
   }
 }
