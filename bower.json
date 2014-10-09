@@ -2,22 +2,27 @@
   "name": "passage-timing",
   "version": "0.0.1",
   "dependencies": {
-    "bc-d3-datebrush": "bilgecode/bc-d3-datebrush#0.4.0",
-    "bc-d3-dateline": "bilgecode/bc-d3-dateline#0.4.0",
-    "bc-d3-areachart": "bilgecode/bc-d3-areachart#0.4.0",
-    "bc-sun-chart": "bilgecode/bc-sun-chart#0.4.0",
+    "bc-d3-datebrush": "bilgecode/bc-d3-datebrush#~0.4",
+    "bc-d3-dateline": "bilgecode/bc-d3-dateline#~0.4",
+    "bc-d3-areachart": "bilgecode/bc-d3-areachart#~0.4",
+    "bc-sun-chart": "bilgecode/bc-sun-chart#~0.4",
     "brick-calendar": "jamstooks/brick-calendar",
-    "core-elements": "Polymer/core-elements#0.4.1",
-    "core-icon": "Polymer/core-icon#0.4.1",
-    "google-apis": "jamstooks/google-apis#master",
-    "google-map": "jamstooks/google-map#master",
+    "core-elements": "Polymer/core-elements#~0.4",
+    "core-icon": "Polymer/core-icon#~0.4",
+    "google-apis": "GoogleWebComponents/google-apis#0.3.2",
+    "google-map": "GoogleWebComponents/google-map#~0.3.1",
     "jquery": "jquery/jquery#1.9.1",
     "jquery-cookie": "carhartl/jquery-cookie#~1.4",
-    "paper-elements": "Polymer/paper-elements#0.4.1",
-    "polymer": "Polymer/polymer#0.4.1"
+    "paper-elements": "Polymer/paper-elements#~0.4",
+    "polymer": "Polymer/polymer#~0.4"
   },
   "devDependencies": {},
   "resolutions": {
-    "core-shared-lib": "^0.4.0"
+    "google-apis": "0.3.2",
+    "bc-d3-chart": "0.4.0",
+    "polymer": "^0.4.0",
+    "bc-d3-base": "0.4.0",
+    "platform": "^0.4.0",
+    "core-component-page": "^0.4.0"
   }
 }

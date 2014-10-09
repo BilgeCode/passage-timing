@@ -6,6 +6,7 @@
 <link rel="import" href="../bower_components/core-icons/maps-icons.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
 
 
 <polymer-element name="pt-toolbar" attributes="authOptions showMap showGraphs smallThreshold">
@@ -70,24 +71,27 @@
         Passage Timing <sup>BETA</sup>
       </span>
 
-      <paper-menu-button icon="account-circle" halign="right" valign="bottom">
+      <paper-menu-button icon="account-circle" halign="right">
         <template if="{{authOptions.username && authOptions.logoutLink}}">
-          <div>
-            <a href="{{authOptions.logoutLink}}">Logout</a>, {{authOptions.username}}
-          </div>
+          <paper-item label="Logout, {{authOptions.username}}">
+            <a href="{{authOptions.logoutLink}}"></a>
+          </paper-item>
         </template>
         <template if="{{!authOptions.username}}">
-          <div>
-            <a href="{{authOptions.loginLink}}">Login</a>
-          </div>
+          <paper-item label="Sign in">
+            <a href="{{authOptions.loginLink}}"></a>
+          </paper-item>
         </template>
       </paper-menu-button>
 
-      <paper-menu-button icon="help" halign="right" valign="bottom">
+      <paper-menu-button icon="help" halign="right">
         <template repeat="{{i in authOptions.helpMenuItems}}">
-          <div><a href="{{i[1]}}">{{i[0]}}</a></div>
+          <paper-item label="{{i[0]}}">
+              <a href="{{i[1]}}"></a>
+          </paper-item>
         </template>
       </paper-menu-button>
+
     </core-toolbar>
   </template>
   <script>
