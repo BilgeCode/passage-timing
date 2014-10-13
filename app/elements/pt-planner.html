@@ -10,7 +10,7 @@
 
 <polymer-element
   name="pt-planner"
-  attributes="passageEndpoint tideEndpoint mode authOptions apiKey">
+  attributes="passageEndpoint tideEndpoint mode authOptions">
 
   <!-- included timezone-js here because it's used by multiple elements -->
   <script src="../bower_components/jquery/jquery.min.js"></script>
@@ -118,6 +118,7 @@
               </template>
 
               <pt-waypoint-list
+                forecastApiKey="{{forecastApiKey}}"
                 passage="{{passage}}"
                 width="{{graphWidth}}"
                 tideEndpoint="{{tideEndpoint}}"
@@ -159,7 +160,7 @@
       showGraphs: true,
       responsiveWidth: "768px",
       smallThreshold: false,
-
+      forecastApiKey: null,
       apiKey: null,
       passage: null,
 
@@ -170,6 +171,8 @@
 
       authOptionsChanged: function() {
         console.log("chagerooni");
+        this.apiKey = this.authOptions.googleKey;
+        this.forecastApiKey = this.authOptions.forecastApiKey;
       },
 
       created: function() {

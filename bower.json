@@ -6,6 +6,7 @@
     "bc-d3-dateline": "bilgecode/bc-d3-dateline#~0.4",
     "bc-d3-areachart": "bilgecode/bc-d3-areachart#~0.4",
     "bc-sun-chart": "bilgecode/bc-sun-chart#~0.4",
+    "bc-wind-chart": "bilgecode/bc-wind-chart",
     "brick-calendar": "jamstooks/brick-calendar",
     "core-elements": "Polymer/core-elements#~0.4",
     "core-icon": "Polymer/core-icon#~0.4",

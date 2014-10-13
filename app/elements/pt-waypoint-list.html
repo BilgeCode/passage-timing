@@ -3,7 +3,7 @@
 
 <polymer-element
   name="pt-waypoint-list"
-  attributes="passage tideEndpoint width apiKey">
+  attributes="passage tideEndpoint width apiKey forecastApiKey">
   <template>
     <style>
       :host {
@@ -14,6 +14,7 @@
     <template repeat="{{w in passage.waypoints}}">
       <pt-waypoint-container
         apiKey="{{apiKey}}"
+        forecastApiKey="{{forecastApiKey}}"
         passage="{{passage}}"
         tideEndpoint="{{tideEndpoint}}"
         waypoint="{{w}}"

@@ -347,11 +347,14 @@
             this.demo = true;
             this.showSaveButton = false;
             var d = new Date();
+            // add 2 days
+            var twoDaysLater = new Date(d);
+            twoDaysLater.setDate(d.getDate() + 2);
             this.passage = {
               name: "Demo Passage",
               waypoints: [],
               estimatedAvgSpeed: 4,
-              departureDate: d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(),
+              departureDate: twoDaysLater.getFullYear() + "-" + (twoDaysLater.getMonth() + 1) + "-" + twoDaysLater.getDate(),
               // latitude: 41.35,
               // longitude: -71.3267,
               zoom: 9,
