@@ -16,7 +16,7 @@
 <link rel="import" href="../bower_components/core-icons/hardware-icons.html">
 <link rel="import" href="../bower_components/core-collapse/core-collapse.html">
 
-<link rel="import" href="../bower_components/brick-calendar/src/brick-calendar.html">
+<link rel="import" href="../bower_components/brick-calendar/dist/brick-calendar.html">
 
 <polymer-element
   name="pt-passage-properties"
@@ -138,7 +138,10 @@
       <br/>
 
       <label>The date your window starts</label><br/><br/>
-      <brick-calendar id="calendar" controls chosen="{{passage.name}}"></brick-calendar>
+      <brick-calendar
+        id="calendar"
+        controls
+        chosen="{{passage.departureDate}}"></brick-calendar>
 
       <paper-button label="Done" affirmative autofocus role="button"
         tabindex="0" aria-label="Done"></paper-button>
