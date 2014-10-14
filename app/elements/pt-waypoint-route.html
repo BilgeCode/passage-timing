@@ -143,6 +143,10 @@
         /*
           Handles the right-click event that creates a waypoint
         */
+
+        if(_StatHat != undefined)
+          _StatHat.push(["_trackCount", "Uuz8KUKMzFD3MCehPEBCyCAzRlZM", 1.0]);
+
         var w = {
           latLng: [event.latLng.lat(), event.latLng.lng()],
           name: null,
