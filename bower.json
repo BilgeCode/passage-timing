@@ -4,14 +4,14 @@
   "dependencies": {
     "bc-d3-datebrush": "bilgecode/bc-d3-datebrush#~0.4",
     "bc-d3-dateline": "bilgecode/bc-d3-dateline#~0.4",
-    "bc-d3-areachart": "bilgecode/bc-d3-areachart#~0.4",
+    "bc-d3-areachart": "bilgecode/bc-d3-areachart#>0.4.0",
     "bc-sun-chart": "bilgecode/bc-sun-chart#~0.4",
-    "bc-wind-chart": "bilgecode/bc-wind-chart",
-    "brick-calendar": "jamstooks/brick-calendar#master",
+    "bc-wind-chart": "bilgecode/bc-wind-chart#~0.0",
+    "brick-calendar": "mozbrick/brick-calendar#master",
     "core-elements": "Polymer/core-elements#~0.4",
     "core-icon": "Polymer/core-icon#~0.4",
-    "google-apis": "GoogleWebComponents/google-apis#0.3.2",
-    "google-map": "GoogleWebComponents/google-map#~0.3.1",
+    "google-apis": "GoogleWebComponents/google-apis#~0.3",
+    "google-map": "GoogleWebComponents/google-map#~0.3",
     "jquery": "jquery/jquery#1.9.1",
     "jquery-cookie": "carhartl/jquery-cookie#~1.4",
     "paper-elements": "Polymer/paper-elements#~0.4",
@@ -19,12 +19,10 @@
   },
   "devDependencies": {},
   "resolutions": {
-    "google-apis": "0.3.2",
+    "google-apis": "~0.3.3",
     "bc-d3-chart": "0.4.0",
     "polymer": "^0.4.0",
-    "bc-d3-base": "0.4.0",
     "platform": "^0.4.0",
-    "core-component-page": "^0.4.0",
     "bc-d3-areachart": "#~0.4",
     "core-shared-lib": "#^0.4.0"
   }
