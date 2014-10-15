@@ -4,9 +4,8 @@
   "dependencies": {
     "bc-d3-datebrush": "bilgecode/bc-d3-datebrush#~0.4",
     "bc-d3-dateline": "bilgecode/bc-d3-dateline#~0.4",
-    "bc-d3-areachart": "bilgecode/bc-d3-areachart#>0.4.0",
     "bc-sun-chart": "bilgecode/bc-sun-chart#~0.4",
-    "bc-wind-chart": "bilgecode/bc-wind-chart#~0.0",
+    "bc-wind-chart": "bilgecode/bc-wind-chart#0.0.3",
     "brick-calendar": "mozbrick/brick-calendar#master",
     "core-elements": "Polymer/core-elements#~0.4",
     "core-icon": "Polymer/core-icon#~0.4",
@@ -23,7 +22,9 @@
     "bc-d3-chart": "0.4.0",
     "polymer": "^0.4.0",
     "platform": "^0.4.0",
-    "bc-d3-areachart": "#~0.4",
-    "core-shared-lib": "#^0.4.0"
+    "core-shared-lib": "#^0.4.0",
+    "core-component-page": ">=0.4.0 <1.0.0",
+    "bc-d3-base": "0.4.0",
+    "bc-d3-areachart": "^0.4.1"
   }
 }
